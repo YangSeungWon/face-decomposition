@@ -18,9 +18,9 @@ class RelightNet(nn.Module):
         self.img_width = 256
         self.lr = 0.0001
         self.df_dim = 64
-        self.directional_intensity = 0.5
+        self.directional_intensity = 0.41
         self.light_distance = 4013.0
-        self.num_sample_points = 160
+        self.num_sample_points = 159
 
         xx, yy = np.meshgrid(range(self.img_width), range(self.img_height), indexing='xy')
         self.xx = nn.Parameter(torch.from_numpy(np.copy(xx)).unsqueeze(0).repeat([self.batch_size, 1, 1]).float(), requires_grad=False)-(self.img_width/2.0)
@@ -34,13 +34,13 @@ class RelightNet(nn.Module):
         self.conv_h1_2 = nn.Conv2d(16, 16, 3, padding=(1, 1))
         self.conv_h2_1 = nn.Conv2d(16, 32, 3, padding=(1, 1))
         self.conv_h2_2 = nn.Conv2d(32, 32, 3, padding=(1, 1))
-        self.conv_shortcut_h1_out = nn.Conv2d(16, 32, 3, padding=(1, 1))
+        self.conv_shortcut_h1_out = nn.Conv2d(16, 32, 1, bias=False)
         self.conv_h3_1 = nn.Conv2d(32, 64, 3, padding=(1, 1))
         self.conv_h3_2 = nn.Conv2d(64, 64, 3, padding=(1, 1))
-        self.conv_shortcut_h2_out = nn.Conv2d(32, 64, 3, padding=(1, 1))
+        self.conv_shortcut_h2_out = nn.Conv2d(32, 64, 1, bias=False)
         self.conv_h4_1 = nn.Conv2d(64, 155, 3, padding=(1, 1))
         self.conv_h4_2 = nn.Conv2d(155, 155, 3, padding=(1, 1))
-        self.conv_shortcut_h3_out = nn.Conv2d(64, 155, 3, padding=(1, 1))
+        self.conv_shortcut_h3_out = nn.Conv2d(64, 155, 1, bias=False)
 
         self.bn_c1_og = nn.BatchNorm2d(16)
         self.bn_h1_1 = nn.BatchNorm2d(16)
@@ -64,17 +64,17 @@ class RelightNet(nn.Module):
         #albedo decoder layers
         self.deconv_albedo_h5_1 = nn.ConvTranspose2d(128, 64, 3, padding=(1, 1))
         self.deconv_albedo_h5_2 = nn.ConvTranspose2d(64, 64, 3, padding=(1, 1))
-        self.deconv_albedo_shortcut_all_features = nn.ConvTranspose2d(128, 64, 3, padding=(1, 1))
+        self.deconv_albedo_shortcut_all_features = nn.ConvTranspose2d(128, 64, 1, bias=False)
         self.conv_albedo_skip_s1_1 = nn.Conv2d(64, 64, 3, padding=(1, 1))
         self.conv_albedo_skip_s1_2 = nn.Conv2d(64, 64, 3, padding=(1, 1))
         self.deconv_albedo_h6_1 = nn.ConvTranspose2d(64, 32, 3, padding=(1, 1))
         self.deconv_albedo_h6_2 = nn.ConvTranspose2d(32, 32, 3, padding=(1, 1))
-        self.deconv_albedo_shortcut_h5_out = nn.ConvTranspose2d(64, 32, 3, padding=(1, 1))
+        self.deconv_albedo_shortcut_h5_out = nn.ConvTranspose2d(64, 32, 1, bias=False)
         self.conv_albedo_skip_s2_1 = nn.Conv2d(32, 32, 3, padding=(1, 1))
         self.conv_albedo_skip_s2_2 = nn.Conv2d(32, 32, 3, padding=(1, 1))
         self.deconv_albedo_h7_1 = nn.ConvTranspose2d(32, 16, 3, padding=(1, 1))
         self.deconv_albedo_h7_2 = nn.ConvTranspose2d(16, 16, 3, padding=(1, 1))
-        self.deconv_albedo_shortcut_h6_out = nn.ConvTranspose2d(32, 16, 3, padding=(1, 1))
+        self.deconv_albedo_shortcut_h6_out = nn.ConvTranspose2d(32, 16, 1, bias=False)
         self.conv_albedo_skip_s3_1 = nn.Conv2d(16, 16, 3, padding=(1, 1))
         self.conv_albedo_skip_s3_2 = nn.Conv2d(16, 16, 3, padding=(1, 1))
         self.deconv_albedo_h8_1 = nn.ConvTranspose2d(16, 16, 3, padding=(1, 1))
@@ -117,17 +117,17 @@ class RelightNet(nn.Module):
         #depth decoder layers
         self.deconv_depth_h5_1 = nn.ConvTranspose2d(128, 64, 3, padding=(1, 1))
         self.deconv_depth_h5_2 = nn.ConvTranspose2d(64, 64, 3, padding=(1, 1))
-        self.deconv_depth_shortcut_all_features = nn.ConvTranspose2d(128, 64, 3, padding=(1, 1))
+        self.deconv_depth_shortcut_all_features = nn.ConvTranspose2d(128, 64, 1, bias=False)
         self.conv_depth_skip_s1_1 = nn.Conv2d(64, 64, 3, padding=(1, 1))
         self.conv_depth_skip_s1_2 = nn.Conv2d(64, 64, 3, padding=(1, 1))
         self.deconv_depth_h6_1 = nn.ConvTranspose2d(64, 32, 3, padding=(1, 1))
         self.deconv_depth_h6_2 = nn.ConvTranspose2d(32, 32, 3, padding=(1, 1))
-        self.deconv_depth_shortcut_h5_out = nn.ConvTranspose2d(64, 32, 3, padding=(1, 1))
+        self.deconv_depth_shortcut_h5_out = nn.ConvTranspose2d(64, 32, 1, bias=False)
         self.conv_depth_skip_s2_1 = nn.Conv2d(32, 32, 3, padding=(1, 1))
         self.conv_depth_skip_s2_2 = nn.Conv2d(32, 32, 3, padding=(1, 1))
         self.deconv_depth_h7_1 = nn.ConvTranspose2d(32, 16, 3, padding=(1, 1))
         self.deconv_depth_h7_2 = nn.ConvTranspose2d(16, 16, 3, padding=(1, 1))
-        self.deconv_depth_shortcut_h6_out = nn.ConvTranspose2d(32, 16, 3, padding=(1, 1))
+        self.deconv_depth_shortcut_h6_out = nn.ConvTranspose2d(32, 16, 1, bias=False)
         self.conv_depth_skip_s3_1 = nn.Conv2d(16, 16, 3, padding=(1, 1))
         self.conv_depth_skip_s3_2 = nn.Conv2d(16, 16, 3, padding=(1, 1))
         self.deconv_depth_h8_1 = nn.ConvTranspose2d(16, 16, 3, padding=(1, 1))
@@ -167,7 +167,7 @@ class RelightNet(nn.Module):
         self.upsample_depth_h7_out = nn.Upsample(scale_factor=2, mode='nearest')
         self.upsample_depth_h8_out = nn.Upsample(scale_factor=2, mode='nearest')
 
-    def forward(self, img, epoch, intrinsic_matrix, mask, target_lighting, target_ambient_values, batch_mask):
+    def forward(self, img, epoch, intrinsic_matrix, mask, target_lighting, target_ambient_values):
         img = img.permute(0, 3, 1, 2)
   
         #encoder
@@ -323,11 +323,17 @@ class RelightNet(nn.Module):
         #allow network to estimate smaller values
         c2_o_depth = 100.0*c2_o_depth
 
-        #render image
-        surface_normals = depth_to_normals(c2_o_depth+1610, intrinsic_matrix)
+        surface_normals = depth_to_normals(c2_o_depth+1410, intrinsic_matrix)
         surface_normals[:, 1, :, :] = -surface_normals[:, 1, :, :]
 
         points_3D = torch.cat((torch.reshape(self.xx, (self.batch_size, 1, self.img_height, self.img_width)), torch.reshape(self.yy, (self.batch_size, 1, self.img_height, self.img_width)), c2_o_depth), 1)
+        estimated_light = SL_lin2[:, :, :, 1:4].permute(0, 3, 1, 2)
+        estimated_unit_light_direction = estimated_light
+        
+        estimated_unit_light_direction[:, 2] = torch.maximum(estimated_unit_light_direction[:, 2], torch.tensor([[[0.16]]]).cuda())
+        
+        estimated_unit_light_direction = F.normalize(estimated_light, p=2, dim=1)
+        
 
         #(batch_size, 3, 1, 1)
         incident_light = target_lighting
@@ -339,9 +345,9 @@ class RelightNet(nn.Module):
         surface_normals = F.normalize(surface_normals, p=2, dim=1)
         directional_component = self.directional_intensity*torch.maximum(torch.sum(surface_normals*incident_light, dim=1), torch.tensor([0.0]).cuda())
       
-        #For qualitative results feel free to tune the ambient intensity to produce the best results. This will mostly affect the shadow intensity and is flexible since the user can specify their desired target lighting.
-        ambient_light = SL_lin2[:, :, :, 0]-0.1
-   
+        #(batch_size, 1, 1)
+        ambient_light = target_ambient_values
+        estimated_ambient_light = SL_lin2[:, :, :, 0]
         ambient_values = ambient_light
         ambient_light = ambient_light.repeat(1, self.img_height, self.img_width)
         full_shading = ambient_light+directional_component
@@ -443,7 +449,7 @@ class RelightNet(nn.Module):
             end_points[1, :, :][end_points[1, :, :] > 128] = 128.0
             
             difference = end_points-starting_points_xy
-            sample_increments = torch.reshape(torch.tensor(np.arange(0.025, 0.825, 0.005)), (self.num_sample_points, 1, 1, 1))
+            sample_increments = torch.reshape(torch.tensor(np.arange(0.03, 0.825, 0.005)), (self.num_sample_points, 1, 1, 1))
             sample_increments = sample_increments.repeat(1, 2, self.img_height, self.img_width)
             starting_points_xy = starting_points_xy.repeat(self.num_sample_points, 1, 1, 1)
             difference = difference.repeat(self.num_sample_points, 1, 1, 1)
@@ -470,7 +476,7 @@ class RelightNet(nn.Module):
             sampled_depths_interpolated_x_upper = sampled_depths_upper_left*(sampled_indices_ceiled[:, 0]-sampled_indices_unrounded[:, 0])+sampled_depths_upper_right*(sampled_indices_unrounded[:, 0]-sampled_indices_floored[:, 0])
             sampled_depths_interpolated_x_lower = sampled_depths_lower_left*(sampled_indices_ceiled[:, 0]-sampled_indices_unrounded[:, 0])+sampled_depths_lower_right*(sampled_indices_unrounded[:, 0]-sampled_indices_floored[:, 0])
             sampled_depths_interpolated = sampled_depths_interpolated_x_upper*(sampled_indices_ceiled[:, 1]-sampled_indices_unrounded[:, 1])+sampled_depths_interpolated_x_lower*(sampled_indices_unrounded[:, 1]-sampled_indices_floored[:, 1])
-          
+
             sampled_indices_unrounded = sampled_indices_unrounded.permute(1, 0)
             sampled_indices_unrounded[0, :] -= (self.img_width/2.0)
             sampled_indices_unrounded[1, :] = (self.img_height/2.0)-sampled_indices_unrounded[1, :]
@@ -478,6 +484,7 @@ class RelightNet(nn.Module):
 
             points_A = sampled_3D_points_interpolated.float()
             points_B = torch.reshape(points_3D[i, :, :, :], (3, 1, self.img_height, self.img_width)).repeat(1, self.num_sample_points, 1, 1)
+            
             BA = points_A-points_B
             points_C = torch.reshape(incident_light_points[i, :, :, :], (3, 1, self.img_height, self.img_width))
             points_C = points_C.repeat(1, self.num_sample_points, 1, 1)
@@ -491,16 +498,18 @@ class RelightNet(nn.Module):
             point_to_line_distances = torch.logical_not(outside_of_face)*point_to_line_distances+outside_of_face*1000000.0
             point_to_line_distances = torch.reshape(point_to_line_distances, (self.num_sample_points, self.img_height, self.img_width))
             (values, idx) = torch.min(point_to_line_distances, dim=0)
+            
             minimum_distance[i, :, :] = values
 
-            if(light_x >= -(self.img_width/2.0) and light_x <= (self.img_width-self.img_width/2.0-1) and light_y >= (1-(self.img_height/2.0)) and light_y <= self.img_height/2.0):
+            if(light_x >= -4*(self.img_width) and light_x <= 4*(self.img_width) and light_y >= 4*(1-(self.img_height)) and light_y <= 4*self.img_height):
                 minimum_distance[i, :, :] = minimum_distance[i, :, :]+5.0
 
         shadow_mask_weights = -4*torch.exp(-minimum_distance)/torch.pow((1+torch.exp(-minimum_distance)), 2)+1
         final_shading = shadow_mask_weights.cuda()*full_shading+(1-shadow_mask_weights.cuda())*ambient_light
         rendered_images = c2_o_albedo.clone()
+        
         rendered_images[:, 0, :, :] = rendered_images[:, 0, :, :].clone()*final_shading
         rendered_images[:, 1, :, :] = rendered_images[:, 1, :, :].clone()*final_shading
         rendered_images[:, 2, :, :] = rendered_images[:, 2, :, :].clone()*final_shading
 
-        return c2_o_albedo, c2_o_depth, shadow_mask_weights, ambient_light, full_shading, rendered_images, unit_light_direction, ambient_values, final_shading, surface_normals
+        return c2_o_albedo, c2_o_depth, shadow_mask_weights, ambient_light, full_shading, rendered_images, unit_light_direction, ambient_values, final_shading, surface_normals, estimated_unit_light_direction, estimated_ambient_light
