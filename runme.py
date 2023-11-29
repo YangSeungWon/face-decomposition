@@ -85,7 +85,12 @@ if __name__ == "__main__":
     # for every subdirectory under "train_data_face" directory
     # for every image in the subdirectory
     for dirs in tqdm(os.listdir(f"./{train_data_path}"), desc="videos", leave=True):
-        os.makedirs(f"./{train_data_path}_decomposed/{dirs}", exist_ok=True)
+        try:
+            os.makedirs(f"./{train_data_path}_decomposed/{dirs}", exist_ok=False)
+        except:
+            # check the number of inner files in the directory
+            if len(os.listdir(f"./{train_data_path}_decomposed/{dirs}")) == len(os.listdir(f"./{train_data_path}/{dirs}")) * 7:
+                continue
         for file in tqdm(os.listdir(f"./{train_data_path}/{dirs}"), desc="images", leave=False):
             image_path = os.path.join(f"./{train_data_path}_decomposed/{dirs}/", file)
             # resize to 256x256
